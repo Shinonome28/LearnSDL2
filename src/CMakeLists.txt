@@ -1,0 +1,7 @@
+
+file(GLOB_RECURSE SOURCEFILES "*.cpp")
+foreach(_source IN LISTS SOURCEFILES)
+    get_filename_component(_basename ${_source} NAME_WE)
+    add_executable(${_basename} WIN32  ${_source})
+    target_link_libraries(${_basename} PRIVATE SDL2::SDL2main SDL2::SDL2)
+endforeach(_source IN LISTS SOURCEFILES)
