@@ -1,4 +1,6 @@
 
+include_directories(${LearnSDL2_SOURCE_DIR}/include)
+
 file(GLOB_RECURSE SOURCEFILES "*.cpp")
 foreach(_source IN LISTS SOURCEFILES)
     get_filename_component(_basename ${_source} NAME_WE)
