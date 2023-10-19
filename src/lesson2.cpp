@@ -11,7 +11,7 @@ constexpr int kScreenWidth = 800;
 constexpr int kScreenHeight = 680;
 
 SDL_Window *gWindow = nullptr;
-SDL_Surface *gScreenSurface = nullptr;
+SDL_Surface *gWindowSurface = nullptr;
 SDL_Surface *gHelloWorld = nullptr;
 
 void Init() {
@@ -20,7 +20,7 @@ void Init() {
                              SDL_WINDOWPOS_UNDEFINED, kScreenWidth,
                              kScreenHeight, SDL_WINDOW_SHOWN);
   check_error(gWindow == nullptr);
-  gScreenSurface = SDL_GetWindowSurface(gWindow);
+  gWindowSurface = SDL_GetWindowSurface(gWindow);
 }
 
 void LoadMedia() {
@@ -38,7 +38,7 @@ void Close() {
 int main(int argc, char **argv) {
   Init();
   LoadMedia();
-  SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL);
+  SDL_BlitSurface(gHelloWorld, NULL, gWindowSurface, NULL);
   SDL_UpdateWindowSurface(gWindow);
 
   SDL_Event e;

@@ -21,7 +21,7 @@ enum KeyPressSurfaces {
 };
 
 SDL_Window *gWindow = nullptr;
-SDL_Surface *gScreenSurface = nullptr;
+SDL_Surface *gWindowSurface = nullptr;
 SDL_Surface **gKeyPressSurfaces = nullptr;
 SDL_Surface *gCurrentSurface = nullptr;
 
@@ -37,7 +37,7 @@ void Init() {
                              SDL_WINDOWPOS_UNDEFINED, kScreenWidth,
                              kScreenHeight, SDL_WINDOW_SHOWN);
   check_error(gWindow == nullptr);
-  gScreenSurface = SDL_GetWindowSurface(gWindow);
+  gWindowSurface = SDL_GetWindowSurface(gWindow);
   gKeyPressSurfaces = new SDL_Surface *[kTotalPressSurfaces];
   gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT] = LoadMedia("images/press.bmp");
   gKeyPressSurfaces[KEY_PRESS_SURFACE_UP] = LoadMedia("images/up.bmp");
@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
             break;
         }
       }
-      SDL_BlitSurface(gCurrentSurface, NULL, gScreenSurface, NULL);
+      SDL_BlitSurface(gCurrentSurface, NULL, gWindowSurface, NULL);
       SDL_UpdateWindowSurface(gWindow);
     }
   }

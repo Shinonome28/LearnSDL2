@@ -21,14 +21,14 @@ enum KeyPressSurfaces {
 };
 
 SDL_Window *gWindow = nullptr;
-SDL_Surface *gScreenSurface = nullptr;
+SDL_Surface *gWindowSurface = nullptr;
 SDL_Surface **gKeyPressSurfaces = nullptr;
 SDL_Surface *gCurrentSurface = nullptr;
 
 SDL_Surface *LoadMedia(const char *path) {
   SDL_Surface *p = SDL_LoadBMP(path);
   check_error(p == nullptr);
-  SDL_Surface *converted = SDL_ConvertSurface(p, gScreenSurface->format, 0);
+  SDL_Surface *converted = SDL_ConvertSurface(p, gWindowSurface->format, 0);
   check_error(converted == nullptr);
   SDL_FreeSurface(p);
   return converted;
@@ -40,7 +40,7 @@ void Init() {
                              SDL_WINDOWPOS_UNDEFINED, kScreenWidth,
                              kScreenHeight, SDL_WINDOW_SHOWN);
   check_error(gWindow == nullptr);
-  gScreenSurface = SDL_GetWindowSurface(gWindow);
+  gWindowSurface = SDL_GetWindowSurface(gWindow);
   gKeyPressSurfaces = new SDL_Surface *[kTotalPressSurfaces];
   gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT] = LoadMedia("images/press.bmp");
   gKeyPressSurfaces[KEY_PRESS_SURFACE_UP] = LoadMedia("images/up.bmp");
@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
       stretchRect.h = kScreenHeight;
       stretchRect.w = kScreenWidth;
 
-      SDL_BlitScaled(gCurrentSurface, NULL, gScreenSurface, &stretchRect);
+      SDL_BlitScaled(gCurrentSurface, NULL, gWindowSurface, &stretchRect);
       SDL_UpdateWindowSurface(gWindow);
     }
   }
