@@ -4,9 +4,24 @@
 #include <SDL2/SDL_image.h>
 #include <Windows.h>
 
-inline void output__(const char *str) {
+#include <sstream>
+
+void output__(const char *str) {
   MessageBox(nullptr, str, "Error!", MB_OK | MB_ICONERROR);
 }
+
+class DebugStream {
+ public:
+  template <typename T>
+  DebugStream &operator<<(const T &value) {
+    std::stringstream ss;
+    ss << value;
+    output__(ss.str().c_str());
+    return *this;
+  }
+};
+
+DebugStream gDebugStream;
 
 inline void check_error(bool flag) {
   if (flag) {
