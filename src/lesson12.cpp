@@ -101,32 +101,32 @@ int main(int argc, char** argv) {
         switch (e.key.keysym.sym) {
             // Increase red
           case SDLK_q:
-            r += 32;
+            r += 2;
             break;
 
           // Increase green
           case SDLK_w:
-            g += 32;
+            g += 2;
             break;
 
           // Increase blue
           case SDLK_e:
-            b += 32;
+            b += 2;
             break;
 
           // Decrease red
           case SDLK_a:
-            r -= 32;
+            r -= 2;
             break;
 
           // Decrease green
           case SDLK_s:
-            g -= 32;
+            g -= 2;
             break;
 
           // Decrease blue
           case SDLK_d:
-            b -= 32;
+            b -= 2;
             break;
           default:
             break;
