@@ -10,18 +10,40 @@ void output__(const char *str) {
   MessageBox(nullptr, str, "Error!", MB_OK | MB_ICONERROR);
 }
 
-class DebugStream {
+class DebugOutputStream {
+  friend DebugOutputStream debug();
+  struct StreamEndT {};
+
  public:
   template <typename T>
-  DebugStream &operator<<(const T &value) {
-    std::stringstream ss;
-    ss << value;
-    output__(ss.str().c_str());
+  DebugOutputStream &operator<<(const T &value) {
+    (*cache) << value;
     return *this;
   }
+
+  template <>
+  DebugOutputStream &operator<<(const StreamEndT &) {
+    output__(cache->str().c_str());
+    delete cache;
+    cache = nullptr;
+    return *this;
+  }
+
+  static StreamEndT End() { return StreamEndT(); }
+
+  ~DebugOutputStream() {
+    if (cache != nullptr) {
+      delete cache;
+    }
+  }
+
+ private:
+  DebugOutputStream() { cache = new std::stringstream(); }
+
+  std::stringstream *cache = nullptr;
 };
 
-DebugStream gDebugStream;
+DebugOutputStream debug() { return DebugOutputStream(); }
 
 inline void check_error(bool flag) {
   if (flag) {
