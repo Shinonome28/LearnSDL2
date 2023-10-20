@@ -20,7 +20,7 @@ void Init() {
                              kScreenHeight, SDL_WINDOW_SHOWN);
   check_error(gWindow == nullptr);
 
-  gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_SOFTWARE);
+  gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
   check_error(gRenderer == nullptr);
 }
 
