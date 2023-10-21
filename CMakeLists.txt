@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(SDL2 CONFIG REQUIRED)
 find_package(SDL2_image CONFIG REQUIRED)
+find_package(SDL2_ttf CONFIG REQUIRED)
 
 add_subdirectory(src)
 
@@ -18,4 +19,14 @@ add_custom_target(
     ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${imageSource} ${imageDestination} 
     DEPENDS ${imageSource}
+)
+
+
+set(fontSource "${CMAKE_SOURCE_DIR}/fonts")
+set(fontDestination "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_BUILD_TYPE}/fonts")
+add_custom_target(
+    copyFonts
+    ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${fontSource} ${fontDestination} 
+    DEPENDS ${fontDestination}
 )
