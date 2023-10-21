@@ -171,7 +171,8 @@ void UButton::HandleEvent(SDL_Event* e) {
 }
 
 void Init() {
-  check_error(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0);
+  check_error(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC |
+                       SDL_INIT_GAMECONTROLLER) < 0);
   SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
   gWindow = SDL_CreateWindow("SDL2 Demo", SDL_WINDOWPOS_UNDEFINED,
                              SDL_WINDOWPOS_UNDEFINED, kScreenWidth,
@@ -189,7 +190,37 @@ void Init() {
   check_error_ttf(gFont == nullptr);
 }
 
+SDL_Joystick* gJoyStick = nullptr;
+SDL_Haptic* gJoyHaptic = nullptr;
+SDL_GameController* gGameController = nullptr;
+
+void InitGameController() {
+  ensure_custom(SDL_NumJoysticks() >= 1, "No Game Controller.");
+  if (!SDL_IsGameController(0)) {
+    gJoyStick = SDL_JoystickOpen(0);
+    ensure(gJoyStick != nullptr);
+    if (SDL_JoystickIsHaptic(gJoyStick)) {
+      gJoyHaptic = SDL_HapticOpenFromJoystick(gJoyStick);
+      if (gJoyHaptic != nullptr) {
+        SDL_HapticRumbleInit(gJoyHaptic);
+      }
+    }
+  } else {
+    gGameController = SDL_GameControllerOpen(0);
+    ensure(gGameController != nullptr);
+  }
+}
+
 void Close() {
+  if (gGameController != nullptr) {
+    SDL_GameControllerClose(gGameController);
+  }
+  if (gJoyHaptic != nullptr) {
+    SDL_HapticClose(gJoyHaptic);
+  }
+  if (gJoyStick != nullptr) {
+    SDL_JoystickClose(gJoyStick);
+  }
   SDL_DestroyRenderer(gRenderer);
   SDL_DestroyWindow(gWindow);
   IMG_Quit();

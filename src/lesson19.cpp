@@ -3,13 +3,11 @@
 #include "framework1.h"
 using namespace std;
 
-SDL_Joystick* gJoyStick = nullptr;
-
 constexpr int kDeadZone = 0;
 
 int main(int argc, char** argv) {
   Init();
-
+  SDL_Joystick* gJoyStick = nullptr;
   ensure_custom(SDL_NumJoysticks() >= 1, "Not found joystick");
   gJoyStick = SDL_JoystickOpen(0);
   ensure(gJoyStick != nullptr);
