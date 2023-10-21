@@ -13,9 +13,9 @@ void output__(const char *str) {
 
 class DebugOutputStream {
   friend DebugOutputStream debug();
-  struct StreamEndT {};
 
  public:
+  struct StreamEndT {};
   template <typename T>
   DebugOutputStream &operator<<(const T &value) {
     (*cache) << value;
@@ -30,8 +30,6 @@ class DebugOutputStream {
     return *this;
   }
 
-  static StreamEndT End() { return StreamEndT(); }
-
   ~DebugOutputStream() {
     if (cache != nullptr) {
       delete cache;
@@ -45,43 +43,61 @@ class DebugOutputStream {
 };
 
 DebugOutputStream debug() { return DebugOutputStream(); }
+DebugOutputStream::StreamEndT &debug_end() {
+  static DebugOutputStream::StreamEndT v;
+  return v;
+}
 
-inline void check_error(bool flag) {
+void check_error(bool flag) {
   if (flag) {
     output__(SDL_GetError());
     exit(1);
   }
 }
 
-inline void check_error_img(bool flag) {
+void check_error_custom(bool flag, const char *msg) {
+  if (flag) {
+    output__(msg);
+    exit(1);
+  }
+}
+
+void check_error_img(bool flag) {
   if (flag) {
     output__(IMG_GetError());
     exit(1);
   }
 }
 
-inline void check_error_ttf(bool flag) {
+void check_error_ttf(bool flag) {
   if (flag) {
     output__(TTF_GetError());
     exit(1);
   }
 }
 
-inline void ensure(bool flag) {
+void ensure(bool flag) {
   if (!flag) {
     output__(SDL_GetError());
     exit(1);
   }
 }
 
-inline void ensure_img(bool flag) {
+void ensure_custom(bool flag, const char *msg) {
+  if (!flag) {
+    output__(msg);
+    exit(1);
+  }
+}
+
+void ensure_img(bool flag) {
   if (!flag) {
     output__(IMG_GetError());
     exit(1);
   }
 }
 
-inline void ensure_ttf(bool flag) {
+void ensure_ttf(bool flag) {
   if (!flag) {
     output__(TTF_GetError());
     exit(1);

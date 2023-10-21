@@ -171,7 +171,8 @@ void UButton::HandleEvent(SDL_Event* e) {
 }
 
 void Init() {
-  check_error(SDL_Init(SDL_INIT_VIDEO) < 0);
+  check_error(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0);
+  SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
   gWindow = SDL_CreateWindow("SDL2 Demo", SDL_WINDOWPOS_UNDEFINED,
                              SDL_WINDOWPOS_UNDEFINED, kScreenWidth,
                              kScreenHeight, SDL_WINDOW_SHOWN);
