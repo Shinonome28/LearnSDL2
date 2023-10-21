@@ -111,6 +111,65 @@ void UTexture::LoadFromText(const char* text, SDL_Color color) {
   SDL_FreeSurface(rendered_text_surface);
 }
 
+enum UButtonState {
+  BUTTON_MOUSE_OUT,
+  BUTTON_MOUSE_OVER_MOTION,
+  BUTTON_MOUSE_DOWN,
+  BUTTON_MOUSE_UP,
+  BUTTON_MOUSE_UNKNOWN
+};
+
+class UButton {
+ public:
+  UButton(int x, int y, int w, int h) : x_(x), y_(y), w_(w), h_(h) {}
+  void HandleEvent(SDL_Event* e);
+  UButtonState GetState() { return state_; };
+  int GetX() { return x_; }
+  int GetY() { return y_; }
+
+ private:
+  UButtonState state_ = BUTTON_MOUSE_UNKNOWN;
+  int x_, y_, w_, h_;
+};
+
+void UButton::HandleEvent(SDL_Event* e) {
+  if (e->type == SDL_MOUSEMOTION || e->type == SDL_MOUSEBUTTONDOWN ||
+      e->type == SDL_MOUSEBUTTONUP) {
+    int x, y;
+    SDL_GetMouseState(&x, &y);
+    bool inside = true;
+
+    if (x < x_) {
+      inside = false;
+    } else if (x > x_ + w_) {
+      inside = false;
+    } else if (y < y_) {
+      inside = false;
+    } else if (y > y_ + h_) {
+      inside = false;
+    }
+
+    if (!inside) {
+      state_ = BUTTON_MOUSE_OUT;
+      return;
+    }
+
+    switch (e->type) {
+      case SDL_MOUSEMOTION:
+        state_ = BUTTON_MOUSE_OVER_MOTION;
+        break;
+
+      case SDL_MOUSEBUTTONDOWN:
+        state_ = BUTTON_MOUSE_DOWN;
+        break;
+
+      case SDL_MOUSEBUTTONUP:
+        state_ = BUTTON_MOUSE_UP;
+        break;
+    }
+  }
+}
+
 void Init() {
   check_error(SDL_Init(SDL_INIT_VIDEO) < 0);
   gWindow = SDL_CreateWindow("SDL2 Demo", SDL_WINDOWPOS_UNDEFINED,
