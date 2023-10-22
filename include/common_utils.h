@@ -2,6 +2,7 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_mixer.h>
 #include <SDL2/SDL_ttf.h>
 #include <Windows.h>
 
@@ -76,6 +77,13 @@ void check_error_ttf(bool flag) {
   }
 }
 
+void check_error_mixer(bool flag) {
+  if (flag) {
+    output__(Mix_GetError());
+    exit(1);
+  }
+}
+
 void ensure(bool flag) {
   if (!flag) {
     output__(SDL_GetError());
@@ -93,6 +101,13 @@ void ensure_custom(bool flag, const char *msg) {
 void ensure_img(bool flag) {
   if (!flag) {
     output__(IMG_GetError());
+    exit(1);
+  }
+}
+
+void ensure_mixer(bool flag) {
+  if (!flag) {
+    output__(Mix_GetError());
     exit(1);
   }
 }

@@ -6,6 +6,19 @@
 
 #include "common_utils.h"
 
+constexpr int kScreenWidth = 800;
+constexpr int kScreenHeight = 680;
+constexpr int kHardwareMixerChannels = 2;
+constexpr int kPlaybackFrequency = 44100;
+constexpr int kMixerChunkSize = 2048;
+
+SDL_Window* gWindow = nullptr;
+SDL_Renderer* gRenderer = nullptr;
+TTF_Font* gFont = nullptr;
+SDL_Joystick* gJoyStick = nullptr;
+SDL_Haptic* gJoyHaptic = nullptr;
+SDL_GameController* gGameController = nullptr;
+
 struct TextureRenderOptions {
   SDL_Rect* clip = nullptr;
   double angle = 0.0;
@@ -35,13 +48,6 @@ class UTexture {
   int height_;
   SDL_Texture* texture_ = nullptr;
 };
-
-constexpr int kScreenWidth = 800;
-constexpr int kScreenHeight = 680;
-
-SDL_Window* gWindow = nullptr;
-SDL_Renderer* gRenderer = nullptr;
-TTF_Font* gFont = nullptr;
 
 void UTexture::Free() {
   if (texture_ != nullptr) {
@@ -170,9 +176,21 @@ void UButton::HandleEvent(SDL_Event* e) {
   }
 }
 
+Mix_Music* LoadMusic(const char* path) {
+  Mix_Music* r = Mix_LoadMUS(path);
+  check_error_mixer(r == nullptr);
+  return r;
+}
+
+Mix_Chunk* LoadChunk(const char* path) {
+  Mix_Chunk* r = Mix_LoadWAV(path);
+  check_error_mixer(r == nullptr);
+  return r;
+}
+
 void Init() {
-  check_error(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC |
-                       SDL_INIT_GAMECONTROLLER) < 0);
+  check_error(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK |
+                       SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER) < 0);
   SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
   gWindow = SDL_CreateWindow("SDL2 Demo", SDL_WINDOWPOS_UNDEFINED,
                              SDL_WINDOWPOS_UNDEFINED, kScreenWidth,
@@ -188,11 +206,10 @@ void Init() {
 
   gFont = TTF_OpenFont("fonts/lazy.ttf", 28);
   check_error_ttf(gFont == nullptr);
-}
 
-SDL_Joystick* gJoyStick = nullptr;
-SDL_Haptic* gJoyHaptic = nullptr;
-SDL_GameController* gGameController = nullptr;
+  check_error_mixer(Mix_OpenAudio(kPlaybackFrequency, MIX_DEFAULT_FORMAT,
+                                  kHardwareMixerChannels, kMixerChunkSize) < 0);
+}
 
 void InitGameController() {
   ensure_custom(SDL_NumJoysticks() >= 1, "No Game Controller.");
