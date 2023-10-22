@@ -244,6 +244,59 @@ void Close() {
   SDL_Quit();
 }
 
+class UTimer {
+ public:
+  void Start();
+  void Stop();
+  void Pause();
+  void Unpause();
+
+  Uint32 GetTime();
+
+  bool IsStarted() { return is_started_; };
+  bool IsPaused() { return is_paused_; };
+  bool CanStart() { return !is_started_; }
+  bool CanStop() { return is_started_; }
+  bool CanPause() { return is_started_ && !is_paused_; }
+  bool CanUnpause() { return is_started_ && is_paused_; }
+
+ private:
+  Uint32 started_time_;
+  Uint32 paused_time_;
+  bool is_started_ = false;
+  bool is_paused_ = false;
+};
+
+void UTimer::Start() {
+  started_time_ = SDL_GetTicks();
+  is_started_ = true;
+}
+
+void UTimer::Stop() {
+  is_started_ = false;
+  is_paused_ = false;
+}
+
+void UTimer::Pause() {
+  paused_time_ = SDL_GetTicks();
+  is_paused_ = true;
+}
+
+Uint32 UTimer::GetTime() {
+  if (is_paused_) {
+    return paused_time_ - started_time_;
+  } else if (!is_started_) {
+    return 0;
+  } else {
+    return SDL_GetTicks() - started_time_;
+  }
+}
+
+void UTimer::Unpause() {
+  started_time_ = SDL_GetTicks() - (paused_time_ - started_time_);
+  is_paused_ = false;
+}
+
 // example main function
 int ExampleMain1(int argc, char** argv) {
   Init();
