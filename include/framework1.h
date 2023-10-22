@@ -11,6 +11,8 @@ constexpr int kScreenHeight = 680;
 constexpr int kHardwareMixerChannels = 2;
 constexpr int kPlaybackFrequency = 44100;
 constexpr int kMixerChunkSize = 2048;
+constexpr int kDotWidth = 20;
+constexpr int kDotHeight = 20;
 
 SDL_Window* gWindow = nullptr;
 SDL_Renderer* gRenderer = nullptr;
@@ -48,6 +50,8 @@ class UTexture {
   int height_;
   SDL_Texture* texture_ = nullptr;
 };
+
+UTexture gDotTexture;
 
 void UTexture::Free() {
   if (texture_ != nullptr) {
@@ -209,6 +213,8 @@ void Init() {
 
   check_error_mixer(Mix_OpenAudio(kPlaybackFrequency, MIX_DEFAULT_FORMAT,
                                   kHardwareMixerChannels, kMixerChunkSize) < 0);
+
+  gDotTexture.LoadFromFile("images/dot.png");
 }
 
 void InitGameController() {
@@ -296,6 +302,61 @@ void UTimer::Unpause() {
   started_time_ = SDL_GetTicks() - (paused_time_ - started_time_);
   is_paused_ = false;
 }
+
+class UDot {
+ public:
+  UDot(int x_vel_value, int y_vel_value)
+      : x_vel_value_(x_vel_value), y_vel_value_(y_vel_value) {}
+  void HandleEvent(const SDL_Event& e, SDL_Keycode up_key, SDL_Keycode down_key,
+                   SDL_Keycode left_key, SDL_Keycode right_key);
+  void Move();
+  void Render();
+
+ private:
+  int x_pos_ = 0, y_pos_ = 0, x_vel_ = 0, y_vel_ = 0;
+  const int x_vel_value_, y_vel_value_;
+};
+
+void UDot::HandleEvent(const SDL_Event& e, SDL_Keycode up_key,
+                       SDL_Keycode down_key, SDL_Keycode left_key,
+                       SDL_Keycode right_key) {
+  if (e.type == SDL_KEYDOWN && e.key.repeat == 0) {
+    SDL_Keycode code = e.key.keysym.sym;
+    if (code == up_key) {
+      y_vel_ -= y_vel_value_;
+    } else if (code == down_key) {
+      y_vel_ += y_vel_value_;
+    } else if (code == left_key) {
+      x_vel_ -= x_vel_value_;
+    } else if (code == right_key) {
+      x_vel_ += x_vel_value_;
+    }
+  } else if (e.type == SDL_KEYUP && e.key.repeat == 0) {
+    SDL_Keycode code = e.key.keysym.sym;
+    if (code == up_key) {
+      y_vel_ += y_vel_value_;
+    } else if (code == down_key) {
+      y_vel_ -= y_vel_value_;
+    } else if (code == left_key) {
+      x_vel_ += x_vel_value_;
+    } else if (code == right_key) {
+      x_vel_ -= x_vel_value_;
+    }
+  }
+}
+
+void UDot::Move() {
+  x_pos_ += x_vel_;
+  if ((x_pos_ < 0) || ((x_pos_ + kDotWidth) > kScreenWidth)) {
+    x_pos_ -= x_vel_;
+  }
+  y_pos_ += y_vel_;
+  if ((y_pos_) < 0 || ((y_pos_ + kDotHeight) > kScreenHeight)) {
+    y_pos_ -= y_vel_;
+  }
+}
+
+void UDot::Render() { gDotTexture.Render(x_pos_, y_pos_); }
 
 // example main function
 int ExampleMain1(int argc, char** argv) {
