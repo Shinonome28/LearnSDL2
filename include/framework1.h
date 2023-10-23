@@ -8,8 +8,8 @@
 
 #include "common_utils.h"
 
-constexpr int kScreenWidth = 400;
-constexpr int kScreenHeight = 300;
+constexpr int kScreenWidth = 800;
+constexpr int kScreenHeight = 600;
 constexpr int kLevelWidth = 1280;
 constexpr int kLevelHeight = 960;
 constexpr int kHardwareMixerChannels = 2;
@@ -218,7 +218,7 @@ void Init() {
   check_error_mixer(Mix_OpenAudio(kPlaybackFrequency, MIX_DEFAULT_FORMAT,
                                   kHardwareMixerChannels, kMixerChunkSize) < 0);
 
-  gDotTexture.LoadFromFile("images/dot.png");
+  gDotTexture.LoadFromFile("images/dot.bmp");
 }
 
 void InitGameController() {
