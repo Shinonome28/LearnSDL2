@@ -310,6 +310,7 @@ class UDot {
   void HandleEvent(const SDL_Event& e, SDL_Keycode up_key, SDL_Keycode down_key,
                    SDL_Keycode left_key, SDL_Keycode right_key);
   void Move();
+  void Move(const SDL_Rect& wall);
   void Render();
 
  private:
@@ -357,6 +358,45 @@ void UDot::Move() {
 }
 
 void UDot::Render() { gDotTexture.Render(x_pos_, y_pos_); }
+
+bool CheckCollision(const SDL_Rect& a, const SDL_Rect& b) {
+  const int left_a = a.x;
+  const int right_a = a.x + a.w;
+  const int top_a = a.y;
+  const int bottom_a = a.y + a.h;
+  const int left_b = b.x;
+  const int right_b = b.x + b.w;
+  const int top_b = b.y;
+  const int bottom_b = b.y + b.h;
+
+  if (right_a <= left_b || right_b <= left_a) {
+    return false;
+  }
+  if (bottom_a <= top_b || bottom_b <= top_a) {
+    return false;
+  }
+
+  return true;
+}
+
+void UDot::Move(const SDL_Rect& wall) {
+  {
+    x_pos_ += x_vel_;
+    SDL_Rect collision_box = {x_pos_, y_pos_, kDotWidth, kDotHeight};
+    if (x_pos_ < 0 || x_pos_ + kDotWidth > kScreenWidth ||
+        CheckCollision(collision_box, wall)) {
+      x_pos_ -= x_vel_;
+    }
+  }
+  {
+    y_pos_ += y_vel_;
+    SDL_Rect collision_box = {x_pos_, y_pos_, kDotWidth, kDotHeight};
+    if (y_pos_ < 0 || y_pos_ + kDotHeight > kScreenHeight ||
+        CheckCollision(collision_box, wall)) {
+      y_pos_ -= y_vel_;
+    }
+  }
+}
 
 // example main function
 int ExampleMain1(int argc, char** argv) {
