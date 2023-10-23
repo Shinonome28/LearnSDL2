@@ -4,6 +4,8 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 
+#include <vector>
+
 #include "common_utils.h"
 
 constexpr int kScreenWidth = 800;
@@ -306,17 +308,73 @@ void UTimer::Unpause() {
 class UDot {
  public:
   UDot(int x_vel_value, int y_vel_value)
-      : x_vel_value_(x_vel_value), y_vel_value_(y_vel_value) {}
+      : x_vel_value_(x_vel_value), y_vel_value_(y_vel_value) {
+    colliders_.resize(11);
+    colliders_[0].w = 6;
+    colliders_[0].h = 1;
+
+    colliders_[1].w = 10;
+    colliders_[1].h = 1;
+
+    colliders_[2].w = 14;
+    colliders_[2].h = 1;
+
+    colliders_[3].w = 16;
+    colliders_[3].h = 2;
+
+    colliders_[4].w = 18;
+    colliders_[4].h = 2;
+
+    colliders_[5].w = 20;
+    colliders_[5].h = 6;
+
+    colliders_[6].w = 18;
+    colliders_[6].h = 2;
+
+    colliders_[7].w = 16;
+    colliders_[7].h = 2;
+
+    colliders_[8].w = 14;
+    colliders_[8].h = 1;
+
+    colliders_[9].w = 10;
+    colliders_[9].h = 1;
+
+    colliders_[10].w = 6;
+    colliders_[10].h = 1;
+
+    ShiftColliders_();
+  }
   void HandleEvent(const SDL_Event& e, SDL_Keycode up_key, SDL_Keycode down_key,
                    SDL_Keycode left_key, SDL_Keycode right_key);
   void Move();
   void Move(const SDL_Rect& wall);
+  void Move(const std::vector<SDL_Rect>& other_colliders);
   void Render();
+  void ShiftTo(int x, int y) {
+    x_pos_ = x;
+    y_pos_ = y;
+    ShiftColliders_();
+  }
+
+  std::vector<SDL_Rect> GetColliders() { return colliders_; };
 
  private:
   int x_pos_ = 0, y_pos_ = 0, x_vel_ = 0, y_vel_ = 0;
   const int x_vel_value_, y_vel_value_;
+  std::vector<SDL_Rect> colliders_;
+
+  void ShiftColliders_();
 };
+
+void UDot::ShiftColliders_() {
+  int r = 0;
+  for (size_t i = 0; i < colliders_.size(); i++) {
+    colliders_[i].x = x_pos_ + (kDotWidth - colliders_[i].w) / 2;
+    colliders_[i].y = y_pos_ + r;
+    r += colliders_[i].h;
+  }
+}
 
 void UDot::HandleEvent(const SDL_Event& e, SDL_Keycode up_key,
                        SDL_Keycode down_key, SDL_Keycode left_key,
@@ -379,6 +437,18 @@ bool CheckCollision(const SDL_Rect& a, const SDL_Rect& b) {
   return true;
 }
 
+bool CheckCollision(const std::vector<SDL_Rect>& a,
+                    const std::vector<SDL_Rect>& b) {
+  for (size_t i = 0; i < a.size(); i++) {
+    for (size_t j = 0; j < b.size(); j++) {
+      if (CheckCollision(a[i], b[j])) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 void UDot::Move(const SDL_Rect& wall) {
   {
     x_pos_ += x_vel_;
@@ -395,6 +465,21 @@ void UDot::Move(const SDL_Rect& wall) {
         CheckCollision(collision_box, wall)) {
       y_pos_ -= y_vel_;
     }
+  }
+}
+
+void UDot::Move(const std::vector<SDL_Rect>& other_colliders) {
+  x_pos_ += x_vel_;
+  ShiftColliders_();
+  if (x_pos_ < 0 || x_pos_ + kDotWidth > kScreenWidth ||
+      CheckCollision(colliders_, other_colliders)) {
+    x_pos_ -= x_vel_;
+  }
+  y_pos_ += y_vel_;
+  ShiftColliders_();
+  if (y_pos_ < 0 || y_pos_ + kDotHeight > kScreenHeight ||
+      CheckCollision(colliders_, other_colliders)) {
+    y_pos_ -= y_vel_;
   }
 }
 
