@@ -118,3 +118,12 @@ void ensure_ttf(bool flag) {
     exit(1);
   }
 }
+
+template <typename T>
+void cap(T &v, const T &min, const T &max) {
+  if (v < min) {
+    v = min;
+  } else if (v > max) {
+    v = max;
+  }
+}

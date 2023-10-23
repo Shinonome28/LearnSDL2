@@ -8,8 +8,10 @@
 
 #include "common_utils.h"
 
-constexpr int kScreenWidth = 800;
-constexpr int kScreenHeight = 680;
+constexpr int kScreenWidth = 400;
+constexpr int kScreenHeight = 300;
+constexpr int kLevelWidth = 1280;
+constexpr int kLevelHeight = 960;
 constexpr int kHardwareMixerChannels = 2;
 constexpr int kPlaybackFrequency = 44100;
 constexpr int kMixerChunkSize = 2048;
@@ -348,14 +350,20 @@ class UDot {
   void HandleEvent(const SDL_Event& e, SDL_Keycode up_key, SDL_Keycode down_key,
                    SDL_Keycode left_key, SDL_Keycode right_key);
   void Move();
+  void MoveInLevel();
   void Move(const SDL_Rect& wall);
   void Move(const std::vector<SDL_Rect>& other_colliders);
   void Render();
+  void RenderRelativeToCamera(const SDL_Rect& camera);
   void ShiftTo(int x, int y) {
     x_pos_ = x;
     y_pos_ = y;
     ShiftColliders_();
   }
+
+  int GetXPosition() { return x_pos_; }
+
+  int GetYPosition() { return y_pos_; }
 
   std::vector<SDL_Rect> GetColliders() { return colliders_; };
 
@@ -415,7 +423,22 @@ void UDot::Move() {
   }
 }
 
+void UDot::MoveInLevel() {
+  x_pos_ += x_vel_;
+  if ((x_pos_ < 0) || ((x_pos_ + kDotWidth) > kLevelWidth)) {
+    x_pos_ -= x_vel_;
+  }
+  y_pos_ += y_vel_;
+  if ((y_pos_) < 0 || ((y_pos_ + kDotHeight) > kLevelHeight)) {
+    y_pos_ -= y_vel_;
+  }
+}
+
 void UDot::Render() { gDotTexture.Render(x_pos_, y_pos_); }
+
+void UDot::RenderRelativeToCamera(const SDL_Rect& camera) {
+  gDotTexture.Render(x_pos_ - camera.x, y_pos_ - camera.y);
+}
 
 bool CheckCollision(const SDL_Rect& a, const SDL_Rect& b) {
   const int left_a = a.x;
