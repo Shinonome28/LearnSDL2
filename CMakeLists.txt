@@ -38,7 +38,16 @@ add_custom_target(
     VERBATIM
 )
 
+set(data_source_ "${CMAKE_SOURCE_DIR}/data")
+set(data_destionation_ "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_BUILD_TYPE}/data")
+add_custom_target(
+    copy_data_
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${data_source_} ${data_destionation_} 
+    COMMENT "Copying data..."
+    VERBATIM
+)
+
 add_custom_target(copy_all_ COMMENT "Copying all files...")
-add_dependencies(copy_all_ copy_images_ copy_fonts_ copy_sounds_)
+add_dependencies(copy_all_ copy_images_ copy_fonts_ copy_sounds_ copy_data_)
 
 add_subdirectory(src)

@@ -50,6 +50,8 @@ class UTexture {
   void SetColor(Uint8 Red, Uint8 Green, Uint8 Blue);
   void SetBlendeMode(SDL_BlendMode blend_mode);
   void SetAlpha(Uint8 alpha);
+  bool IsLoaded() { return texture_ != nullptr; }
+  void TryFree();
 
   ~UTexture() { Free(); }
 
@@ -60,6 +62,10 @@ class UTexture {
 };
 
 UTexture gDotTexture;
+
+void UTexture::TryFree() {
+  if (IsLoaded()) Free();
+}
 
 void UTexture::Free() {
   if (texture_ != nullptr) {
