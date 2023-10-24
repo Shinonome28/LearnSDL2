@@ -25,6 +25,10 @@ SDL_Joystick* gJoyStick = nullptr;
 SDL_Haptic* gJoyHaptic = nullptr;
 SDL_GameController* gGameController = nullptr;
 
+struct Circle {
+  int x, y, r;
+};
+
 struct TextureRenderOptions {
   SDL_Rect* clip = nullptr;
   double angle = 0.0;
@@ -353,6 +357,7 @@ class UDot {
   void MoveInLevel();
   void Move(const SDL_Rect& wall);
   void Move(const std::vector<SDL_Rect>& other_colliders);
+  void MoveInSceneUseCircleCollider(const SDL_Rect& wall, const Circle& other);
   void Render();
   void RenderRelativeToCamera(const SDL_Rect& camera);
   void ShiftTo(int x, int y) {
@@ -360,6 +365,8 @@ class UDot {
     y_pos_ = y;
     ShiftColliders_();
   }
+
+  Circle GetCircleCollider() { return circle_collider_; }
 
   int GetXPosition() { return x_pos_; }
 
@@ -371,6 +378,7 @@ class UDot {
   int x_pos_ = 0, y_pos_ = 0, x_vel_ = 0, y_vel_ = 0;
   const int x_vel_value_, y_vel_value_;
   std::vector<SDL_Rect> colliders_;
+  Circle circle_collider_ = {0, 0, kDotWidth / 2};
 
   void ShiftColliders_();
 };
@@ -382,6 +390,8 @@ void UDot::ShiftColliders_() {
     colliders_[i].y = y_pos_ + r;
     r += colliders_[i].h;
   }
+  circle_collider_.x = x_pos_ + circle_collider_.r;
+  circle_collider_.y = y_pos_ + circle_collider_.r;
 }
 
 void UDot::HandleEvent(const SDL_Event& e, SDL_Keycode up_key,
@@ -502,6 +512,52 @@ void UDot::Move(const std::vector<SDL_Rect>& other_colliders) {
   ShiftColliders_();
   if (y_pos_ < 0 || y_pos_ + kDotHeight > kScreenHeight ||
       CheckCollision(colliders_, other_colliders)) {
+    y_pos_ -= y_vel_;
+  }
+}
+
+bool CheckCollision(const Circle& a, const Circle& b) {
+  return square(a.x - b.x) + square(a.y - b.y) < square(a.r + b.r);
+}
+
+bool CheckCollision(const Circle& a, const SDL_Rect& b) {
+  int c_x, c_y;
+  if (a.x < b.x) {
+    c_x = b.x;
+  } else if (a.x > b.x + b.w) {
+    c_x = b.x + b.w;
+  }
+  // in this case there must be a collision.
+  // we do this to ensure the check to be success
+  else {
+    c_x = a.x;
+  }
+
+  if (a.y < b.y) {
+    c_y = b.y;
+  } else if (a.y > b.y + b.h) {
+    c_y = b.y + b.h;
+  } else {
+    c_y = a.y;
+  }
+
+  return distanceSquared(a.x, a.y, c_x, c_y) < square(a.r);
+}
+
+void UDot::MoveInSceneUseCircleCollider(const SDL_Rect& wall,
+                                        const Circle& other) {
+  x_pos_ += x_vel_;
+  ShiftColliders_();
+  if (x_pos_ < 0 || x_pos_ + kDotWidth > kScreenWidth ||
+      CheckCollision(circle_collider_, wall) ||
+      CheckCollision(circle_collider_, other)) {
+    x_pos_ -= x_vel_;
+  }
+  y_pos_ += y_vel_;
+  ShiftColliders_();
+  if (y_pos_ < 0 || y_pos_ + kDotHeight > kScreenHeight ||
+      CheckCollision(circle_collider_, wall) ||
+      CheckCollision(circle_collider_, other)) {
     y_pos_ -= y_vel_;
   }
 }

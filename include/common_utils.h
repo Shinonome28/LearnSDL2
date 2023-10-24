@@ -127,3 +127,18 @@ void cap(T &v, const T &min, const T &max) {
     v = max;
   }
 }
+
+template <typename T>
+T square(T v) {
+  return v * v;
+}
+
+template <typename T>
+T distance(T x1, T y1, T x2, T y2) {
+  return std::sqrt(square(x1 - x2) + square(y1 - y2));
+}
+
+template <typename T>
+T distanceSquared(T x1, T y1, T x2, T y2) {
+  return square(x1 - x2) + square(y1 - y2);
+}
