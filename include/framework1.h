@@ -4,6 +4,7 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 
+#include <cassert>
 #include <vector>
 
 #include "common_utils.h"
@@ -40,13 +41,18 @@ class UTexture {
  public:
   void Free();
   void LoadFromFile(const char* path);
+  void LoadFromFile(SDL_Renderer* renderer, const char* path);
   void LoadFromText(const char* text, SDL_Color color);
 
   int GetWidth() { return width_; }
   int GetHeight() { return height_; }
 
-  void Render(int x, int y, const SDL_Rect* clip = nullptr);
+  void Render(int x, int y, SDL_Rect* clip = nullptr);
   void Render(int x, int y, TextureRenderOptions* options);
+
+  void Render(SDL_Renderer* renderer, int x, int y,
+              TextureRenderOptions* options);
+
   void SetColor(Uint8 Red, Uint8 Green, Uint8 Blue);
   void SetBlendeMode(SDL_BlendMode blend_mode);
   void SetAlpha(Uint8 alpha);
@@ -80,11 +86,11 @@ SDL_Surface* LoadMedia(const char* path) {
   return p;
 }
 
-void UTexture::LoadFromFile(const char* path) {
+void UTexture::LoadFromFile(SDL_Renderer* renderer, const char* path) {
   SDL_Surface* img = LoadMedia(path);
   // 使用默认的color key
   SDL_SetColorKey(img, SDL_TRUE, SDL_MapRGB(img->format, 0, 0xFF, 0xFF));
-  texture_ = SDL_CreateTextureFromSurface(gRenderer, img);
+  texture_ = SDL_CreateTextureFromSurface(renderer, img);
   check_error(texture_ == nullptr);
   width_ = img->w;
   height_ = img->h;
@@ -94,13 +100,11 @@ void UTexture::LoadFromFile(const char* path) {
   SetBlendeMode(SDL_BLENDMODE_BLEND);
 }
 
-void UTexture::Render(int x, int y, const SDL_Rect* clip) {
-  SDL_Rect render_rect = {x, y, width_, height_};
-  if (clip != nullptr) {
-    render_rect.h = clip->h;
-    render_rect.w = clip->w;
-  }
-  SDL_RenderCopy(gRenderer, texture_, clip, &render_rect);
+void UTexture::LoadFromFile(const char* path) { LoadFromFile(gRenderer, path); }
+void UTexture::Render(int x, int y, SDL_Rect* clip) {
+  TextureRenderOptions options;
+  options.clip = clip;
+  Render(gRenderer, x, y, &options);
 }
 
 void UTexture::SetColor(Uint8 red, Uint8 green, Uint8 blue) {
@@ -108,13 +112,23 @@ void UTexture::SetColor(Uint8 red, Uint8 green, Uint8 blue) {
 }
 
 void UTexture::Render(int x, int y, TextureRenderOptions* options) {
+  Render(gRenderer, x, y, options);
+}
+
+void UTexture::Render(SDL_Renderer* renderer, int x, int y,
+                      TextureRenderOptions* options) {
+  assert(renderer != nullptr);
   SDL_Rect render_rect = {x, y, width_, height_};
-  if (options->clip != nullptr) {
+  if (options != nullptr && options->clip != nullptr) {
     render_rect.h = options->clip->h;
     render_rect.w = options->clip->w;
   }
-  SDL_RenderCopyEx(gRenderer, texture_, options->clip, &render_rect,
-                   options->angle, options->center, options->flip);
+  if (options != nullptr) {
+    SDL_RenderCopyEx(renderer, texture_, options->clip, &render_rect,
+                     options->angle, options->center, options->flip);
+  } else {
+    SDL_RenderCopy(renderer, texture_, nullptr, &render_rect);
+  }
 }
 
 void UTexture::SetBlendeMode(SDL_BlendMode blend_mode) {
@@ -206,19 +220,23 @@ Mix_Chunk* LoadChunk(const char* path) {
   return r;
 }
 
-void Init() {
+void Init(bool init_window = true) {
   check_error(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK |
                        SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER) < 0);
   SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
   SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
-  gWindow = SDL_CreateWindow("SDL2 Demo", SDL_WINDOWPOS_UNDEFINED,
-                             SDL_WINDOWPOS_UNDEFINED, kScreenWidth,
-                             kScreenHeight, SDL_WINDOW_SHOWN);
-  check_error(gWindow == nullptr);
 
-  gRenderer = SDL_CreateRenderer(
-      gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-  check_error(gRenderer == nullptr);
+  if (init_window) {
+    gWindow = SDL_CreateWindow("SDL2 Demo", SDL_WINDOWPOS_UNDEFINED,
+                               SDL_WINDOWPOS_UNDEFINED, kScreenWidth,
+                               kScreenHeight, SDL_WINDOW_SHOWN);
+    check_error(gWindow == nullptr);
+
+    gRenderer = SDL_CreateRenderer(
+        gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    check_error(gRenderer == nullptr);
+    gDotTexture.LoadFromFile("images/dot.bmp");
+  }
 
   ensure_img(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG);
   ensure_ttf(TTF_Init() == 0);
@@ -228,8 +246,6 @@ void Init() {
 
   check_error_mixer(Mix_OpenAudio(kPlaybackFrequency, MIX_DEFAULT_FORMAT,
                                   kHardwareMixerChannels, kMixerChunkSize) < 0);
-
-  gDotTexture.LoadFromFile("images/dot.bmp");
 }
 
 void InitGameController() {
@@ -259,8 +275,12 @@ void Close() {
   if (gJoyStick != nullptr) {
     SDL_JoystickClose(gJoyStick);
   }
-  SDL_DestroyRenderer(gRenderer);
-  SDL_DestroyWindow(gWindow);
+  if (gRenderer != nullptr) {
+    SDL_DestroyRenderer(gRenderer);
+  }
+  if (gWindow != nullptr) {
+    SDL_DestroyWindow(gWindow);
+  }
   IMG_Quit();
   SDL_Quit();
 }
@@ -569,6 +589,123 @@ void UDot::MoveInSceneUseCircleCollider(const SDL_Rect& wall,
   }
 }
 
+class UWindow {
+ public:
+  void Init();
+  SDL_Renderer* CreateRenderer();
+  void HandleEvent(const SDL_Event& e);
+  void TryFree() noexcept;
+
+  ~UWindow() { TryFree(); }
+
+  int GetWidth();
+  int GetHeight();
+
+  bool HasMouseFocus() {
+    assert(window_ != nullptr);
+    return has_mouse_focus_;
+  };
+  bool HasKeyboardFocus() {
+    assert(window_ != nullptr);
+    return has_keyboard_focus_;
+  }
+  bool IsMinimized() {
+    assert(window_ != nullptr);
+    return is_minimized_;
+  }
+  bool IsFullScreen() { return is_full_screen_; }
+  SDL_Renderer* GetRenderer() { return renderer_; }
+
+ private:
+  SDL_Window* window_ = nullptr;
+  int height_, width_;
+  bool has_mouse_focus_, has_keyboard_focus_, is_minimized_, is_full_screen_;
+  SDL_Renderer* renderer_ = nullptr;
+};
+
+void UWindow::Init() {
+  window_ = SDL_CreateWindow(
+      "SDL Demo", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+      kScreenWidth, kScreenHeight, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+  check_error(window_ == nullptr);
+  height_ = kScreenHeight;
+  width_ = kScreenWidth;
+  has_mouse_focus_ = true;
+  has_keyboard_focus_ = true;
+  is_minimized_ = false;
+  is_full_screen_ = false;
+}
+
+void UWindow::TryFree() noexcept {
+  if (window_ != nullptr) {
+    SDL_DestroyWindow(window_);
+    window_ = nullptr;
+  }
+  if (renderer_ != nullptr) {
+    SDL_DestroyRenderer(renderer_);
+    renderer_ = nullptr;
+  }
+}
+
+SDL_Renderer* UWindow::CreateRenderer() {
+  assert(window_ != nullptr);
+  renderer_ = SDL_CreateRenderer(
+      window_, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+  check_error(renderer_ == nullptr);
+  return renderer_;
+}
+
+void UWindow::HandleEvent(const SDL_Event& e) {
+  assert(renderer_ != nullptr);
+  if (e.type == SDL_WINDOWEVENT) {
+    bool update_caption = false;
+    switch (e.window.event) {
+      case SDL_WINDOWEVENT_SIZE_CHANGED:
+        width_ = e.window.data1;
+        height_ = e.window.data2;
+        SDL_RenderPresent(renderer_);
+        break;
+      case SDL_WINDOWEVENT_EXPOSED:
+        SDL_RenderPresent(renderer_);
+        break;
+      case SDL_WINDOWEVENT_ENTER:
+        has_mouse_focus_ = true;
+        update_caption = true;
+        break;
+      case SDL_WINDOWEVENT_LEAVE:
+        has_mouse_focus_ = false;
+        update_caption = true;
+        break;
+      case SDL_WINDOWEVENT_FOCUS_GAINED:
+        has_keyboard_focus_ = true;
+        update_caption = true;
+        break;
+      case SDL_WINDOWEVENT_FOCUS_LOST:
+        has_keyboard_focus_ = false;
+        update_caption = true;
+        break;
+      case SDL_WINDOWEVENT_MINIMIZED:
+        is_minimized_ = true;
+        break;
+      case SDL_WINDOWEVENT_MAXIMIZED:
+        is_minimized_ = false;
+        break;
+      default:
+        break;
+    }
+    if (update_caption) {
+      std::stringstream caption;
+      caption << "SDL Tutorial - MouseFocus:"
+              << ((has_mouse_focus_) ? "On" : "Off")
+              << " KeyboardFocus:" << ((has_keyboard_focus_) ? "On" : "Off");
+      SDL_SetWindowTitle(window_, caption.str().c_str());
+    }
+  } else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_RETURN) {
+    SDL_SetWindowFullscreen(window_, is_full_screen_ ? SDL_FALSE : SDL_TRUE);
+    is_full_screen_ = !is_full_screen_;
+  }
+}
+
 // example main function
 int ExampleMain1(int argc, char** argv) {
   Init();
@@ -590,5 +727,36 @@ int ExampleMain1(int argc, char** argv) {
   }
 
   Close();
+  return 0;
+}
+
+int ExampleMain2(int argc, char** argv) {
+  Init(false);
+
+  UWindow window;
+  window.Init();
+  SDL_Renderer* renderer = window.CreateRenderer();
+
+  SDL_Event e;
+  bool quit = false;
+
+  while (!quit) {
+    while (SDL_PollEvent(&e)) {
+      if (e.type == SDL_QUIT) {
+        quit = true;
+      }
+
+      window.HandleEvent(e);
+    }
+
+    SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+    SDL_RenderClear(renderer);
+
+    SDL_RenderPresent(renderer);
+  }
+
+  window.TryFree();
+  Close();
+
   return 0;
 }
