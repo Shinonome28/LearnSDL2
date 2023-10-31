@@ -706,6 +706,19 @@ void UWindow::HandleEvent(const SDL_Event& e) {
   }
 }
 
+constexpr int kMaxRecordingDevice = 10;
+constexpr int kMaxRecordingTime = 5;  // in seconds
+constexpr int kRecordBufferTime = kMaxRecordingTime + 1;
+
+enum class RecordingState {
+  kSelectingDevice,
+  kStopped,
+  kRecording,
+  kRecorded,
+  kPlayback,
+  kError
+};
+
 // example main function
 int ExampleMain1(int argc, char** argv) {
   Init();
